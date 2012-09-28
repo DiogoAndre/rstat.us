@@ -46,6 +46,53 @@ describe "twitter-api" do
     end
   end
 
+  describe "statuses" do
+    it "returns a single status" do
+      log_in_as_some_user
+      u = Fabricate(:user)
+
+      update = Fabricate(:update,
+                         :text => "Hello World I'm on RStatus",
+                         :author => u.author)
+      u.feed.updates << update
+      author_decorator = AuthorDecorator.decorate(u.author)
+
+      visit "/api/statuses/show/#{u.feed.updates.first.id}.json"
+
+      parsed_json = JSON.parse(source)
+      parsed_json["text"].must_equal(update.text)
+      parsed_json["user"]["url"].must_equal(author_decorator.absolute_website_url)
+      parsed_json["user"]["screen_name"].must_equal(author_decorator.username)
+      parsed_json["user"]["name"].must_equal(author_decorator.display_name)
+      parsed_json["user"]["profile_image_url"].must_equal("http://rstat.us#{author_decorator.absolute_avatar_url}")
+      Time.parse(parsed_json["user"]["created_at"]).to_i.must_equal(author_decorator.created_at.to_i)
+      parsed_json["user"]["description"].must_equal(author_decorator.bio)
+      parsed_json["user"]["statuses_count"].must_equal(author_decorator.feed.updates.count)
+    end
+
+    it "returns a single status with trimmed user" do
+      log_in_as_some_user
+      u = Fabricate(:user)
+
+      update = Fabricate(:update,
+                         :text => "Hello World I'm on RStatus",
+                         :author => u.author)
+      u.feed.updates << update
+
+      visit "/api/statuses/show/#{u.feed.updates.first.id}.json?trim_user=true"
+
+      parsed_json = JSON.parse(source)
+      parsed_json["text"].must_equal(update.text)
+      parsed_json["user"].wont_include("url","url should not be included in trimmed status")
+      parsed_json["user"].wont_include("screen_name","url should not be included in trimmed status")
+      parsed_json["user"].wont_include("name","url should not be included in trimmed status")
+      parsed_json["user"].wont_include("profile_image_url","url should not be included in trimmed status")
+      parsed_json["user"].wont_include("created_at","url should not be included in trimmed status")
+      parsed_json["user"].wont_include("description","url should not be included in trimmed status")
+      parsed_json["user"].wont_include("statuses_count","url should not be included in trimmed status")
+    end
+  end
+  
   describe "mentions" do
     it "gives mentions" do
       skip "unimplemented"
