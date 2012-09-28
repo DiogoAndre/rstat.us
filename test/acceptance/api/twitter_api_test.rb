@@ -30,13 +30,13 @@ describe "twitter-api" do
 
   describe "home_timeline" do
     it "it returns the home timeline for the user" do
-      u = Fabricate(:user)
-      log_in_username u
+      @u = Fabricate(:user)
+      log_in_username @u
 
       update = Fabricate(:update,
                          :text => "Hello World I'm on RStatus",
-                         :author => u.author)
-      u.feed.updates << update
+                         :author => @u.author)
+      @u.feed.updates << update
 
       visit "/api/statuses/home_timeline.json"
 
